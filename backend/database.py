@@ -2,14 +2,12 @@ import asyncio
 import datetime
 import re
 import uuid
-
 import aiohttp
 import feedparser
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from models import *
+from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
+from backend.models import *
 
 
 class MySession:
@@ -137,9 +135,14 @@ class MySqlHelper:
 
         return update_num
 
-    def info_getAll(self):
+    def info_getAll(self, flag):
         all_info = self._db.session.query(M_Info).all()
-        ans = [x.isummer for x in all_info]
+        if flag == 'title':
+            ans = [x.ititle for x in all_info]
+        elif flag == 'summer':
+            ans = [x.isummer for x in all_info]
+        else:
+            ans = [x.iid for x in all_info]
         return ans
 
     def uts_removeSrc(self, uid, sid):
@@ -171,7 +174,7 @@ def main():
         ['软件改变生活', 'https://feed.iplaysoft.com/'],
         ['背包客棧精選好文', 'https://www.backpackers.com.tw/forum/external.php'],
         ['不止是游戏', 'https://www.gcores.com/rss'],
-        ['煎蛋', 'http://jandan.net/feed'],
+        ['煎蛋', 'https://jandan.net/feed'],
         ['小众软件', 'https://www.appinn.com/feed/'],
         ['少数派', 'https://sspai.com/feed'],
         ['联合国新闻', 'https://news.un.org/feed/subscribe/zh/news/all/rss.xml'],

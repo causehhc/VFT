@@ -235,6 +235,7 @@ def getGraph():
         {"source": "Valjean", "target": "Labarre", "value": 1},
         {"source": "Valjean", "target": "Mme.Magloire", "value": 3},
         {"source": "Valjean", "target": "Mlle.Baptistine", "value": 3},
+        {"source": "Valjean", "target": "Napoleon", "value": 3},
         {"source": "Valjean", "target": "Myriel", "value": 5},
         {"source": "Marguerite", "target": "Valjean", "value": 1},
         {"source": "Mme.deR", "target": "Valjean", "value": 1},

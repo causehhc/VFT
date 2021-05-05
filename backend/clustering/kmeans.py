@@ -1,4 +1,4 @@
-from database import MySqlHelper
+# from database import MySqlHelper
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import jieba
 from scipy.linalg import norm
 import numpy as np
+from backend.database import MySqlHelper
 
 
 def main_engine():
@@ -14,7 +15,7 @@ def main_engine():
         """
     print('1、加载语料')
     sql = MySqlHelper()
-    corpus = sql.info_getAll()
+    corpus = sql.info_getAll('title')
     sent_words = [list(jieba.cut(sent0)) for sent0 in corpus]
     corpus = [' '.join(sent0) for sent0 in sent_words]
 
@@ -72,27 +73,54 @@ def main_engine():
     # plt.savefig('./sample.png', aspect=1)
 
 
-def get_sim(text_weight, index1, index2):
-    sim = np.dot(text_weight[index1 - 1], text_weight[index2 - 1]) / (
-            norm(text_weight[index1 - 1]) * norm(text_weight[index2 - 1]))
-    # sim = int(100 - (sim * 100))
+def get_sim(text_weight, i, j):
+    sim = np.dot(text_weight[i], text_weight[j]) / (
+            norm(text_weight[i]) * norm(text_weight[j]))
+    sim = int(100 - (sim * 100))
     return sim
+
+
+# vertex = 0
+# edge = 0
+# inf = 99999999
+# dis = []  # matrix of the shortest distance
+# path = []  # record the shortest path
+
+
+def getPath(ppp, path, i, j):
+    if i != j:
+        if path[i][j] == -1:
+            # print('-', j, end='')
+            ppp.append(j)
+        else:
+            getPath(ppp, path, i, path[i][j])
+            getPath(ppp, path, path[i][j], j)
+
+
+def printPath(path, i, j):
+    ppp = [i]
+    # print(' Path:', i, end='')
+    getPath(ppp, path, i, j)
+    # print()
+    # print(ppp)
+    return ppp
 
 
 def get_nodes_links(path):
     sql = MySqlHelper()
-    corpus_orin = sql.info_getAll()
+    corpus_orin = sql.info_getAll('title')
     # corpus_orin = ['教育经历和工作经历没有空间',
     #                '我们能改进的只有专业技能和项目经历了',
     #                '我有两家大厂工作经验',
     #                '精通来描述一项专业技能的掌握程度']
-    # corpus_orin = corpus_orin[0:100]
+    corpus_orin = corpus_orin[0:100]
     sent_words = [list(jieba.cut(sent0)) for sent0 in corpus_orin]
     corpus = [' '.join(sent0) for sent0 in sent_words]
     stop_words = open(path, 'r', encoding='utf-8').read().split('\n')
     vectorizer = TfidfVectorizer(stop_words=stop_words)
     text = vectorizer.fit_transform(corpus)
     text_weight = text.toarray()
+
     n_clusters = 10
     kmeans = KMeans(n_clusters=n_clusters)
     kmeans.fit(text_weight)
@@ -100,40 +128,130 @@ def get_nodes_links(path):
     nodes = []
     links = []
     # 打印出各个族的中心点
-    print(text_weight)
+    # print(text_weight)
     # print(np.dot(text_weight[0], text_weight[1]) / (norm(text_weight[0]) * norm(text_weight[1])))
     # print(kmeans.cluster_centers_)
     for index, label in enumerate(kmeans.labels_, 1):
         tmp = {'id': '{}'.format(corpus_orin[index - 1]), 'group': '{}'.format(label)}
         nodes.append(tmp)
 
-    sim_edge_list = []
-    for index, label in enumerate(kmeans.labels_, 1):
-        if index != len(kmeans.labels_):
-            for index2 in range(index + 1, len(kmeans.labels_) + 1):
-                sim = get_sim(text_weight, index - 1, index2 - 1)
-                if sim != 0:
+    # sim_edge_list = []
+    # sim_graph = [[0 for _ in range(len(text_weight))] for _ in range(len(text_weight))]
+    len_text_weight = len(text_weight)
+    for i in range(len_text_weight):
+        if i != len_text_weight - 1:
+            tmp = {
+                'source': '{}'.format(corpus_orin[i]),
+                'target': '{}'.format(corpus_orin[i+1]),
+                'value': '{}'.format(1),
+                # 'source': i,
+                # 'target': j,
+                # 'value': sim
+            }
+            links.append(tmp)
+            for j in range(i + 1, len_text_weight):
+                sim = get_sim(text_weight, i, j)
+                if sim < 85:
                     tmp = {
-                        'source': '{}'.format(corpus_orin[index - 1]),
-                        'target': '{}'.format(corpus_orin[index2 - 1]),
-                        'value': '{}'.format(sim)
+                        'source': '{}'.format(corpus_orin[i]),
+                        'target': '{}'.format(corpus_orin[j]),
+                        'value': '{}'.format(sim),
+                        # 'source': i,
+                        # 'target': j,
+                        # 'value': sim
                     }
-                    sim_edge_list.append(tmp)
-    sim_edge_list = sorted(sim_edge_list, reverse=True, key=lambda x: x['value'])
-    # for item in sim_list:
-    #     print(item)
+                    # print(tmp)
+                    # sim_edge_list.append(tmp)
+                    # sim_graph[i][j] = sim
+                    links.append(tmp)
+        # print(sim_graph)
+    print(len(links))
+    # # ===================================================================================
+    # # initialized
+    # vertex = len_text_weight
+    # edge = len(sim_edge_list)
+    # inf = 99999999
+    # dis = []  # matrix of the shortest distance
+    # path = []  # record the shortest path
+    # for i in range(vertex):
+    #     dis += [[]]
+    #     for j in range(vertex):
+    #         if i == j:
+    #             dis[i].append(0)
+    #         else:
+    #             dis[i].append(inf)
+    # for i in range(vertex):
+    #     path += [[]]
+    #     for j in range(vertex):
+    #         path[i].append(-1)
+    # # read weight information
+    # print('please input weight info(v1 v2 w[v1,v2]): ')
+    # for i in range(edge):
+    #     # u, v, w = input().strip().split()
+    #     u = sim_edge_list[i]['source']
+    #     v = sim_edge_list[i]['target']
+    #     w = sim_edge_list[i]['value']
+    #     u, v, w = u, v, w
+    #     print(u, v, w)
+    #     dis[u][v] = w
+    #     dis[v][u] = w
+    # print('the weight matrix is:')
+    # for i in range(vertex):
+    #     for j in range(vertex):
+    #         if dis[i][j] != inf:
+    #             print('%5d' % dis[i][j], end='')
+    #         else:
+    #             print('%5s' % '∞', end='')
+    #     print()
+    # # floyd algorithm
+    # for k in range(vertex):
+    #     for i in range(vertex):
+    #         for j in range(vertex):
+    #             if dis[i][j] > dis[i][k] + dis[k][j]:
+    #                 dis[i][j] = dis[i][k] + dis[k][j]
+    #                 path[i][j] = k
+    # print('===========================================')
+    # ans = []
+    # # output the result
+    # print('output the result:')
+    # for i in range(vertex):
+    #     for j in range(i + 1, vertex):
+    #         # print('v%d <----> v%d  tol_weight:%3d' % (i, j, dis[i][j]), '', end='')
+    #         ppp = printPath(path, i, j)
+    #         if dis[i][j] != inf:
+    #             for ii in range(len(ppp)):
+    #                 if ii != len(ppp)-1:
+    #                     if [ppp[ii], ppp[ii+1]] not in ans and [ppp[ii+1], ppp[ii]] not in ans:
+    #                         print([ppp[ii], ppp[ii+1]])
+    #                         ans.append([ppp[ii], ppp[ii+1]])
+    # print(edge)
+    # print('ppppp', len(ans))
+    #
+    # print()
+    # for i in range(vertex):
+    #     for j in range(vertex):
+    #         if dis[i][j] == inf:
+    #             dis[i][j] = 0
+    # # max(max(dis)): the max item of two dimension matrix
+    # print('>> the diameter of graph: %d <<' % max(max(dis)))
+    # print('-------------- Program end ----------------')
+    # # ===================================================================================
 
-    hashset = set()
-    for item in sim_edge_list:
-        # if item['value'] > '0':
-            print(item['value'])
-            if item['target'] not in hashset:
-                hashset.add(item['source'])
-                hashset.add(item['target'])
-                links.append(item)
-            elif item['source'] not in hashset:
-                hashset.add(item['source'])
-                links.append(item)
+    # sim_edge_list = sorted(sim_edge_list, reverse=True, key=lambda x: x['value'])
+
+    # for item in sim_edge_list:
+    #     if item['value'] > '0.5':
+    #         links.append(item)
+
+    # hashset = set()
+    # for item in sim_edge_list:
+    #     if item['target'] not in hashset:
+    #         hashset.add(item['source'])
+    #         hashset.add(item['target'])
+    #         links.append(item)
+    #     elif item['source'] not in hashset:
+    #         hashset.add(item['source'])
+    #         links.append(item)
 
     return nodes, links
 
@@ -141,8 +259,8 @@ def get_nodes_links(path):
 def main():
     # main_engine()
     nodes, links = get_nodes_links('./stopwords-master/baidu_stopwords.txt')
-    print(nodes)
-    print(links)
+    # print(nodes)
+    # print(links)
 
 
 if __name__ == '__main__':
