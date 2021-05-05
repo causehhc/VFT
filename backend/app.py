@@ -479,11 +479,12 @@ def getGraph():
         {"source": "Mme.Hucheloup", "target": "Enjolras", "value": 1}
     ]
     nodes, links = get_nodes_links('./clustering/stopwords-master/baidu_stopwords.txt')
+    print(len(nodes), len(links))
     for item in nodes:
         tmp = {'id': item['id'], 'group': item['group']}
         response['data']['nodes'].append(tmp)
     for item in links:
-        tmp = {'source': item['source'], 'target': item['target'], 'value': 1}
+        tmp = {'source': item['source'], 'target': item['target'], 'value': item['value']}
         response['data']['links'].append(tmp)
     return jsonify(response)
 
