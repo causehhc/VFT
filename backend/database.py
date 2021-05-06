@@ -109,6 +109,7 @@ class MySqlHelper:
                         temp_s = temp_s[0:190]
                     ISummer = temp_s
                     if 'published' in entry:
+                        # TODO
                         IUpdated = str(entry['published'])
                     else:
                         IUpdated = datetime.datetime.now().strftime('%Y_%m_%d-%H:%M')
