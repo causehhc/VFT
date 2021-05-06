@@ -12,9 +12,9 @@
             </el-button>
           </div>
           <div class="style2">
-            <span>
-              {{i.postTitle}}
-            </span>
+            <a :href="i.postLink" target="_blank">
+              {{ i.postTitle }}
+            </a>
             <el-divider direction="vertical"></el-divider>
             <span>
               {{i.postUpdated}}
@@ -49,6 +49,7 @@
 
 <script>
 import { getList, postLikes } from '@/api/dynamic'
+
 export default {
   name: "index",
   data() {
@@ -87,7 +88,7 @@ export default {
       }, 10)
     },
     addLikes(info, postID) {
-      info.postLikes = parseInt(info.postLikes)+1 ;
+      info.postLikes = parseInt(info.postLikes) + 1;
       setTimeout(() => {
         postLikes({
           ID: postID
