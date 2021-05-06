@@ -12,6 +12,7 @@
             </el-button>
           </div>
           <div class="style2">
+
             <a :href="i.postLink" target="_blank">
               {{ i.postTitle }}
             </a>
