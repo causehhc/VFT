@@ -8,6 +8,34 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 from backend.models import *
+import time
+from datetime import datetime
+
+
+def transTimeFormat(string):
+    str_list = string.split()
+    if len(str_list) > 1:
+        str_list.pop(-1)
+        if not str_list[0][0].isdigit():
+            str_list.pop(0)
+    str_list = ' '.join(str_list)
+
+    strs = str_list
+    tex = [
+        '%d %b %Y %H:%M:%S',  # Sun, 05 May 2019 00:00:00
+        '%Y-%m-%d %H:%M:%S',  # 2021-04-16 16:40:32
+        '%Y-%m-%dT%H:%M:%SZ',  # 2021-03-26T04:43:00Z
+    ]
+    for j in range(len(tex)):
+        try:
+            d = datetime.strptime(strs.strip(), tex[j])
+            stamp = datetime.timestamp(d)
+            time_local = time.localtime(stamp)
+            dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+            return dt
+        except ValueError:
+            continue
+    return string
 
 
 class MySession:
@@ -37,12 +65,15 @@ class MySqlHelper:
     def get_db(self):
         return self._db
 
-    def clear_all(self):
-        self._db.session().query(M_Info).delete()
-        self._db.session().commit()
+    def clear_all(self, arg):
+        if arg == 'info':
+            self._db.session.query(M_Info).delete()
+        elif arg == 'src':
+            self._db.session.query(M_Src).delete()
+        self._db.session.commit()
         print('delete ok')
 
-    def src_addTitle(self, src_list):
+    def src_addSrc(self, src_list):
         for src in src_list:
             if len(self._db.session.query(M_Src).filter(M_Src.sname == src[0]).all()) != 0:
                 print('insert fail! exists: {}'.format(src[0]))
@@ -87,7 +118,6 @@ class MySqlHelper:
 
         for src_item in src_item_list:
             # 获取当前更新时间
-            print('Requesting for feedparser: {}'.format(src_item.sname))
             RSS_dict = RSS_dicts[src_item.sid]
             if 'updated' in RSS_dict['feed']:
                 updated_now = RSS_dict['feed']['updated']
@@ -109,12 +139,12 @@ class MySqlHelper:
                         temp_s = temp_s[0:190]
                     ISummer = temp_s
                     if 'published' in entry:
-                        # TODO
-                        IUpdated = str(entry['published'])
+                        IUpdated = transTimeFormat(str(entry['published']))
                     else:
-                        IUpdated = datetime.datetime.now().strftime('%Y_%m_%d-%H:%M')
+                        IUpdated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     if len(self._db.session.query(M_Info).filter(M_Info.ititle == ITitle).all()) != 0:
-                        print('update fail! is exists: {}'.format(ITitle))
+                        pass
+                        # print('update fail! is exists: {}'.format(ITitle))
                     else:
                         new_info = M_Info(iid=str(uuid.uuid1()),
                                           sid=src_item.sid,
@@ -125,11 +155,11 @@ class MySqlHelper:
                                           ilikes=0)
                         self._db.session.add(new_info)
                         add_cnt += 1
-                        print('update finished! add exists: {}'.format(ITitle))
+                        # print('update finished! add exists: {}'.format(ITitle))
                 update_num[src_item.sname] = add_cnt
-                print('one update: {}'.format(src_item.sname))
+                print('update finished!\tname: {}\tcnt: {}'.format(src_item.sname, add_cnt))
             else:
-                print('updated fail! now not updated: {}'.format(src_item.sname))
+                print('updated fail!\tname: {}\tcnt: {}'.format(src_item.sname, 0))
         # 提交即保存到数据库
         self._db.session.commit()
         print('check finished!')
@@ -149,7 +179,7 @@ class MySqlHelper:
     def uts_removeSrc(self, uid, sid):
         pass
 
-    def uts_addSrc(self, uid, sid):
+    def uts_addSrc(self):
         pass
 
     def test(self):
@@ -168,10 +198,10 @@ def main():
         # ['TEDTalks(video)', 'https://www.ted.com/feeds/talks.rss'],
         # ['FAIL_Blog', 'http://feeds.feedburner.com/failblog'],
         # ['github', 'https://github.com/guanguans/favorite-link/commits/master.atom'],
-        ['CI0udG0d', 'http://feed.cnblogs.com/blog/u/550390/rss'],
-        ['wa', 'https://wsgzao.github.io/atom.xml'],
-        ['开源中国社区', 'https://www.oschina.net/blog/rss'],
         # ['台灣最視覺系的全球要聞', 'https://dq.yam.com/rss.php'],
+        # ['wa', 'https://wsgzao.github.io/atom.xml'],
+        # ['开源中国社区', 'https://www.oschina.net/blog/rss'],
+        ['CI0udG0d', 'http://feed.cnblogs.com/blog/u/550390/rss'],
         ['软件改变生活', 'https://feed.iplaysoft.com/'],
         ['背包客棧精選好文', 'https://www.backpackers.com.tw/forum/external.php'],
         ['不止是游戏', 'https://www.gcores.com/rss'],
@@ -184,11 +214,12 @@ def main():
         ['喷嚏网', 'http://www.dapenti.com/blog/rss2.asp'],
         ['糗事百科', 'https://www.qiushibaike.com/hot/rss']
     ]
-    # sql.src_addTitle(src_list)
-    # sql.clear_all()
+    sql.clear_all('info')
+    sql.clear_all('src')
+    sql.src_addSrc(src_list)
     sql.info_reflashAll(src_name_list=None, all_force=True)
     # sql.info_getAll(uid)
-    # sql.uts_addSrc(uid, sid)
+    # sql.uts_addSrc()
     # sql.uts_removeSrc(uid, sid)
     # sql.test()
 

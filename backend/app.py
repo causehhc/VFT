@@ -38,6 +38,7 @@ def msg_load_dynamic():
     for src_item in user_src_list:
         srcInfo = db.session.query(M_Info).filter(M_Info.sid == src_item.sid).all()
         src_info_list.extend(srcInfo)
+    src_info_list = sorted(src_info_list, reverse=True, key=lambda x: x.iupdated)
     limit = 25
     start = post_data['count'] - 1
     end = start + limit
@@ -88,7 +89,7 @@ def msg_load_export():
     limit = 25
     start = post_data['count'] - 1
     end = start + limit
-    data_list = db.session.query(M_Info).slice(start, end).all()
+    data_list = db.session.query(M_Info).order_by(M_Info.iupdated.desc()).slice(start, end).all()
     response = {
         'code': 20000,
         'body': {
@@ -97,9 +98,15 @@ def msg_load_export():
         }
     }
     for data in data_list:
+        srcName = db.session.query(M_Src).filter(M_Src.sid == data.sid).one().sname
         temp = {
+            "postSrc": '{}'.format(srcName),
             "postTitle": '{}'.format(data.ititle),
-            'postContent': '{}'.format(data.isummer)
+            "postLink": '{}'.format(data.ilink),
+            'postContent': '{}'.format(data.isummer),
+            'postUpdated': '{}'.format(data.iupdated),
+            'postLikes': '{}'.format(data.ilikes),
+            'postID': '{}'.format(data.iid),
         }
         response['body']['content'].append(temp)
     response['body']['totalPages'] = '{}'.format(len(data_list))
@@ -277,7 +284,7 @@ def user_src_deleteOne():
     post_data = request.get_json()
     print('user_src_deleteOne', post_data['row']['src_name'])
     one_uts = db.session.query(M_UtS).filter(M_UtS.uid == post_data['token'],
-                                     M_UtS.sid == post_data['row']['src_id']).one()
+                                             M_UtS.sid == post_data['row']['src_id']).one()
     db.session.delete(one_uts)
     db.session.commit()
     response = {
@@ -292,7 +299,7 @@ def user_src_addOne():
     post_data = request.get_json()
     print('user_src_addOne', post_data['sid'])
     data_list = db.session.query(M_UtS).filter(M_UtS.uid == post_data['token'],
-                                       M_UtS.sid == post_data['sid']).all()
+                                               M_UtS.sid == post_data['sid']).all()
     if len(data_list) == 0:
         new_item = M_UtS(id=uuid.uuid1(),
                          uid=post_data['token'],

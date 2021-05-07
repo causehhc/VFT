@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, DateTime
 
-# 生成一个SQLORM基类，创建表必须继承他，别问我啥意思就是这么规定的
+# 生成一个SQLORM基类，创建表必须继承他
 Base = declarative_base()
 
 

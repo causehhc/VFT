@@ -27,7 +27,7 @@
           </div>
           <div class="style4">
             <el-button style="float: right; padding: 3px 0" type="text" @click="addLikes(i, i.postID)">
-              一键爱国
+              点赞
             </el-button>
             <div v-if="i.postLikes !== '0'" style="float: right; padding: 3px 0" type="text">
               {{i.postLikes}}

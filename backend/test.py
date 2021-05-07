@@ -2,15 +2,17 @@ import time
 from datetime import datetime
 
 
-def transTimeFormat(str):
-    tt = str.split()
+def transTimeFormat(string):
+    tt = string.split()
     if len(tt) > 1:
         tt.pop(-1)
+        tt.pop(0)
     tt = ' '.join(tt)
+    print(tt)
 
     t = tt
     tex = [
-        '%a, %d %b %Y %H:%M:%S',  # Sun, 05 May 2019 00:00:00
+        '%d %b %Y %H:%M:%S',  # Sun, 05 May 2019 00:00:00
         '%Y-%m-%d %H:%M:%S',  # 2021-04-16 16:40:32
         '%Y-%m-%dT%H:%M:%SZ',  # 2021-03-26T04:43:00Z
     ]
@@ -32,7 +34,8 @@ def transTimeFormat(str):
 if __name__ == '__main__':
 
     # gmt = "Sun, 05 May 2019 00:00:00 GMT"
-    # gmt = "Wed, 05 May 2021 05:17:42 +0000"
+    gmt = "Wed, 05 May 2021 05:17:42 +0000"
+    # gmt = 'Wes, 05 May 2021 17:03:00 +0800'
     # gmt = "2021-04-16 16:40:32  -0000"
     # gmt = "2021-03-26T04:43:00Z"
     print(transTimeFormat(gmt))
